@@ -1,0 +1,26 @@
+// ---------- ensure jar is built before publishing to mavenLocal ----------
+apply plugin: 'maven-publish'
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            // 如果模块是标准 Java 项目，使用 components.java
+            from components.java
+
+            // 明确把当前构建生成的 jar 作为 publication 的 artifact，保证可发布
+            artifact(tasks.named("jar").flatMap { it.archiveFile }) {
+                builtBy tasks.named("jar")
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
+}
+
+// 确保 publish 到 mavenLocal 的任务在执行前先运行 assemble（适用于 CI）
+tasks.withType(org.gradle.api.publish.maven.tasks.PublishToMavenLocal) {
+    dependsOn tasks.named("assemble")
+}
+
+// ---------- end patch ----------
